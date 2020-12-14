@@ -1,0 +1,143 @@
+---
+title: "615 Final Report"
+author: "Zijie Huang"
+date: "2020/12/14"
+output: pdf_document
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load("tidyquant","tidyverse","ggthemes","kableExtra")
+```
+
+```{r include=FALSE}
+#Load Data
+full_stock <- read.csv("full_stock_cleaned.csv")
+full_exchange <- read.csv("full_exchange.csv")
+
+fpx <- read.csv("fpx_stock.csv")
+ipo <- read.csv("ipo_stock.csv")
+csd <- read.csv("csd_stock.csv")
+spak <- read.csv("spak_stock.csv")
+
+FPX <- read.csv("fpx_return.csv")%>%select(-2)
+IPO <- read.csv("ipo_return.csv")%>%select(-2)
+CSD <- read.csv("csd_return.csv")%>%select(-2)
+SPAK <- read.csv("spak_return.csv")%>%select(-2)
+
+SP500 <- read.csv("sp500_return.csv")%>%select(-2)
+NASDAQ <- read.csv("nasdaq_return.csv")%>%select(-2)
+DJI <- read.csv("dji_return.csv")%>%select(-2)
+```
+# 1 Introduction
+This project seeks to use a Shiny application to allow users to build their own stock portfolio and track their portfolio. Also, some IPO ETFs are given for reference and users can compare the return of their portfolio with given ETFs and US indexes. After building their portfolio, users can download them.
+
+# 2 Data Cleaning
+# 2.1 Stock Data
+We used R package *tidyquant* to get our data. We used function *tq_exchange* to get all stocks basic information in New York Stock Exchange, American Stock Exchange and Nasdaq Exchange. Then, we used function *tq_get* to get the prices of these stocks from July 1 to November 30. We deleted the stocks whose IPO date is later July 1. And we filled the missing price values(due to connection issue to *finance.yahoo.com*) with the last row value.
+
+# 2.2 Index Data
+We used *tq_get* to get the value of the Dow-Jones index, S&P 500 and NASDAQ index from July 1 to November 30.
+
+# 2.3 ETF Data
+We got the holdings of four large IPO ETFs from [**etf.com/channels/ipo**](https://www.etf.com/channels/ipo). They are First Trust U.S. Equity Opportunities ETF(FPX), Renaissance IPO ETF(IPO), Invesco S&P Spin-Off ETF(CSD) and Defiance Next Gen SPAC Derived ETF(SPAK). 
+
+# 2.4 Return Rate Data
+We used function *tq_transmute* to calculate the daily rate of return for IPO ETF and US indexes. Then, we got the cumulative return by multiplying daily return.
+
+# 3 Shiny Application
+We have multiple functions in Shiny, we are going to introduce them one by one.
+
+# 3.1 IPO ETF
+Users can select ETFs and check their holdings. Users can take them as reference when building their own portfolio. Below is the top 10 holdings of FPX.\
+```{r echo=FALSE,results="asis"}
+table1 <- fpx %>%
+  select(c(2,4))
+kable(table1)
+```
+# 3.2 Build Portfolio
+We listed more than 5000 thousands stocks in the Shiny Application. Below is the information we have.\
+```{r echo=FALSE,results="asis"}
+table2 <- full_exchange %>%
+        select(-c(1,2))
+kable(head(table2,n=5))%>%
+kable_styling(font_size=6)
+```
+Users can select their portfolio based on these information as well as information they gain from other places. After selecting their favourite stocks, users can set the weighting for them. For demonstration, I choose two stocks. Zoom Video Communication and Tesla. Because of COVID-19 pandemic, the users of Zoom increased rapidly. Because of the development of new energy, Tesla gained a lot of profit. The weighting for them would be half and half. The close price for each stock in July 1 are displayed and users can choose the weighting by typing the number of shares for each stock.\
+```{r echo=FALSE,results="asis"}
+table3 <- data.frame(company = c("Tesla, Inc.","Zoom Video Communications, Inc."),weighting = c("50%","50%"))
+kable(table3)
+```
+
+# 3.3 Check Performance
+After building the portfolio, users can check the cumulative return curve from July 1 to November 30. What is more, users can add IPO ETFs return curve and US indexes return curve to the same plot for comparison. Return for each day are also displayed under this plot in Shiny application. Below is the plot of demonstration portfolio.\
+```{r echo=FALSE, message=FALSE, warning=FALSE, results="asis"}
+data <- rbind(FPX,IPO,CSD,SPAK,SP500,NASDAQ,DJI)
+
+stock <- full_stock %>%
+          select(c(2,3,9,10)) %>%
+          mutate(date = as.Date(date)) %>%
+          fill(adjusted)        
+
+#Get portfolio return
+#Portfolio
+ticker <- c("TSLA","ZM")
+
+#weighting
+wts <- c(0.5,0.5)
+
+#Filter based on portfolio and calculate daily return
+tmp <- stock %>%
+          filter(symbol %in% ticker) %>%
+          group_by(symbol) %>%
+          tq_transmute(select  = adjusted, 
+                 mutate_fun = periodReturn, 
+                 period = "daily",
+                 col_rename = "Return")
+
+#Form portfolio table
+wts_tbl <- tibble(symbol = ticker,
+                  wts = wts)
+#join
+ret_data <- left_join(tmp,wts_tbl, by = "symbol")
+
+#Get weighting daily return
+ret_data <- ret_data %>%
+  mutate(wt_return = wts * Return)
+
+#Get sum daily return
+port_ret <- ret_data %>%
+  group_by(date) %>%
+  summarise(port_ret = sum(wt_return))
+
+#Get cumulative return
+port_cumulative_ret <- port_ret %>%
+          mutate(cr = cumprod(1 + port_ret),
+                 type = "Selected",
+                 date = as.character(date)) %>%
+          select(-2)
+        
+        data <- rbind(data,port_cumulative_ret) %>%
+                mutate(cr = (cr-1)*100)
+
+ggplot(data = data,aes(x = date,y = cr,group=type,color=type)) +
+        geom_line() +
+        ylab("Cumulative Returns %")+
+        xlab("Date From July 1 to November 30")+
+        theme(axis.text.x=element_blank(),
+              axis.ticks.x = element_blank(),
+              panel.grid.minor = element_blank())
+```
+Below is that return table. Users can select the cumulative return on November 30 by typing 11-30 in the search bar.\
+```{r echo=FALSE, message=FALSE, warning=FALSE, results="asis"}
+table4 <- data %>%
+          mutate(cr = paste(round(cr,2),"%",sep = "")) %>%
+          rename(`cumulative return` = cr) %>%
+          filter(str_detect(date,"11-30")=="TRUE")
+          
+kable(table4)
+```
+# 3.4 Save Portfolio
+Aftering building their satisfied portfolio, users can download it from Shiny application. Portfolio is stored as csv file.
+

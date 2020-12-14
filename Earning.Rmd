@@ -1,0 +1,382 @@
+---
+title: "Earning"
+author: "Zijie Huang"
+date: "2020/12/14"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load("tidyquant","tidyverse","ggthemes")
+```
+
+```{r}
+#Load data
+full_stock <- read.csv("full_stock_cleaned.csv")
+fpx <- read.csv("fpx_stock.csv")
+ipo <- read.csv("ipo_stock.csv")
+csd <- read.csv("csd_stock.csv")
+spak <- read.csv("spak_stock.csv")
+SP500 <- read.csv("SP500.csv")
+NASDAQ <- read.csv("NASDAQ.csv")
+DJI <- read.csv("DJI.csv")
+```
+
+```{r}
+stock <- full_stock %>%
+          select(c(2,3,9,10)) %>%
+          mutate(date = as.Date(date)) %>%
+          fill(adjusted)        
+  
+full_stock
+SP500 <- SP500 %>%
+          select(c(1,6))
+NASDAQ <- NASDAQ %>%
+          select(c(1,6))
+DJI <- DJI %>%
+          select(c(1,6))
+
+#Get portfolio return
+#Portfolio
+ticker <- c("BND","ZM")
+
+#weighting
+wts <- c(0.5,0.5)
+
+#Filter based on portfolio and calculate daily return
+tmp <- stock %>%
+          filter(symbol %in% ticker) %>%
+          group_by(symbol) %>%
+          tq_transmute(select  = adjusted, 
+                 mutate_fun = periodReturn, 
+                 period = "daily",
+                 col_rename = "Return")
+
+#Form portfolio table
+wts_tbl <- tibble(symbol = ticker,
+                  wts = wts)
+#join
+ret_data <- left_join(tmp,wts_tbl, by = "symbol")
+
+#Get weighting daily return
+ret_data <- ret_data %>%
+  mutate(wt_return = wts * Return)
+
+#Get sum daily return
+port_ret <- ret_data %>%
+  group_by(date) %>%
+  summarise(port_ret = sum(wt_return))
+
+#Get cumulative return
+port_cumulative_ret <- port_ret %>%
+  mutate(cr = cumprod(1 + port_ret))
+```
+
+```{r}
+#Get index and fund return
+
+#FPX
+ticker <- fpx$company
+
+#weighting
+wts <- fpx$weighting1
+
+#Filter based on portfolio and calculate daily return
+tmp <- stock %>%
+          filter(company %in% ticker) %>%
+          group_by(company) %>%
+          tq_transmute(select  = adjusted, 
+                 mutate_fun = periodReturn, 
+                 period = "daily",
+                 col_rename = "Return")
+#join
+ret_data <- left_join(tmp,fpx, by = "company")
+
+#Get weighting daily return
+ret_data <- ret_data %>%
+  mutate(wt_return = weighting1 * Return)
+
+#Get sum daily return
+port_ret <- ret_data %>%
+  group_by(date) %>%
+  summarise(port_ret = sum(wt_return))
+
+#Get cumulative return
+port_cumulative_ret <- port_ret %>%
+  mutate(cr = cumprod(1 + port_ret))
+
+#Add column
+port_cumulative_ret <- port_cumulative_ret %>%
+                          mutate(type = "FPX")
+
+#save data
+#write.csv(port_cumulative_ret,"fpx_return.csv",row.names = FALSE)
+```
+
+```{r}
+#IPO
+ticker <- ipo$company
+
+#weighting
+wts <- ipo$weighting1
+
+#Filter based on portfolio and calculate daily return
+tmp <- stock %>%
+          filter(company %in% ticker) %>%
+          group_by(company) %>%
+          tq_transmute(select  = adjusted, 
+                 mutate_fun = periodReturn, 
+                 period = "daily",
+                 col_rename = "Return")
+#join
+ret_data <- left_join(tmp,ipo, by = "company")
+
+#Get weighting daily return
+ret_data <- ret_data %>%
+  mutate(wt_return = weighting1 * Return)
+
+#Get sum daily return
+port_ret <- ret_data %>%
+  group_by(date) %>%
+  summarise(port_ret = sum(wt_return))
+
+#Get cumulative return
+port_cumulative_ret <- port_ret %>%
+  mutate(cr = cumprod(1 + port_ret))
+
+#Add column
+port_cumulative_ret <- port_cumulative_ret %>%
+                          mutate(type = "IPO")
+
+#save data
+write.csv(port_cumulative_ret,"ipo_return.csv",row.names = FALSE)
+```
+
+```{r}
+#CSD
+ticker <- csd$company
+
+#weighting
+wts <- csd$weighting1
+
+#Filter based on portfolio and calculate daily return
+tmp <- stock %>%
+          filter(company %in% ticker) %>%
+          group_by(company) %>%
+          tq_transmute(select  = adjusted, 
+                 mutate_fun = periodReturn, 
+                 period = "daily",
+                 col_rename = "Return")
+#join
+ret_data <- left_join(tmp,csd, by = "company")
+
+#Get weighting daily return
+ret_data <- ret_data %>%
+  mutate(wt_return = weighting1 * Return)
+
+#Get sum daily return
+port_ret <- ret_data %>%
+  group_by(date) %>%
+  summarise(port_ret = sum(wt_return))
+
+#Get cumulative return
+port_cumulative_ret <- port_ret %>%
+  mutate(cr = cumprod(1 + port_ret))
+
+#Add column
+port_cumulative_ret <- port_cumulative_ret %>%
+                          mutate(type = "CSD")
+
+
+#save data
+write.csv(port_cumulative_ret,"csd_return.csv",row.names = FALSE)
+```
+
+```{r}
+#IPO
+ticker <- ipo$company
+
+#weighting
+wts <- ipo$weighting1
+
+#Filter based on portfolio and calculate daily return
+tmp <- stock %>%
+          filter(company %in% ticker) %>%
+          group_by(company) %>%
+          tq_transmute(select  = adjusted, 
+                 mutate_fun = periodReturn, 
+                 period = "daily",
+                 col_rename = "Return")
+#join
+ret_data <- left_join(tmp,ipo, by = "company")
+
+#Get weighting daily return
+ret_data <- ret_data %>%
+  mutate(wt_return = weighting1 * Return)
+
+#Get sum daily return
+port_ret <- ret_data %>%
+  group_by(date) %>%
+  summarise(port_ret = sum(wt_return))
+
+#Get cumulative return
+port_cumulative_ret <- port_ret %>%
+  mutate(cr = cumprod(1 + port_ret))
+
+#Add column
+port_cumulative_ret <- port_cumulative_ret %>%
+                          mutate(type = "IPO")
+
+#save data
+write.csv(port_cumulative_ret,"ipo_return.csv",row.names = FALSE)
+```
+
+```{r}
+#SPAK
+ticker <- spak$company
+
+#weighting
+wts <- spak$weighting1
+
+#Filter based on portfolio and calculate daily return
+tmp <- stock %>%
+          filter(company %in% ticker) %>%
+          group_by(company) %>%
+          tq_transmute(select  = adjusted, 
+                 mutate_fun = periodReturn, 
+                 period = "daily",
+                 col_rename = "Return")
+#join
+ret_data <- left_join(tmp,spak, by = "company")
+
+#Get weighting daily return
+ret_data <- ret_data %>%
+  mutate(wt_return = weighting1 * Return)
+
+#Get sum daily return
+port_ret <- ret_data %>%
+  group_by(date) %>%
+  summarise(port_ret = sum(wt_return))
+
+#Get cumulative return
+port_cumulative_ret <- port_ret %>%
+  mutate(cr = cumprod(1 + port_ret))
+
+#Add column
+port_cumulative_ret <- port_cumulative_ret %>%
+                          mutate(type = "SPAK")
+
+#save data
+write.csv(port_cumulative_ret,"spak_return.csv",row.names = FALSE)
+```
+
+```{r}
+#SP500
+SP500 <- SP500 %>%
+          mutate(Date = as.Date(Date)) %>%
+          rename(date = Date)
+
+#calculate daily return
+tmp <- SP500 %>%
+          tq_transmute(select  = Adj.Close, 
+                 mutate_fun = periodReturn, 
+                 period = "daily",
+                 col_rename = "Return")
+
+#Get cumulative return
+port_cumulative_ret <- tmp %>%
+  mutate(cr = cumprod(1 + Return))
+
+#Add column
+port_cumulative_ret <- port_cumulative_ret %>%
+                          mutate(type = "SP500")
+
+#save data
+write.csv(port_cumulative_ret,"sp500_return.csv",row.names = FALSE)
+```
+
+```{r}
+#NASDAQ
+NASDAQ <- NASDAQ %>%
+          mutate(Date = as.Date(Date)) %>%
+          rename(date = Date)
+
+#calculate daily return
+tmp <- NASDAQ %>%
+          tq_transmute(select  = Adj.Close, 
+                 mutate_fun = periodReturn, 
+                 period = "daily",
+                 col_rename = "Return")
+
+#Get cumulative return
+port_cumulative_ret <- tmp %>%
+  mutate(cr = cumprod(1 + Return))
+
+#Add column
+port_cumulative_ret <- port_cumulative_ret %>%
+                          mutate(type = "NASDAQ")
+
+#save data
+write.csv(port_cumulative_ret,"nasdaq_return.csv",row.names = FALSE)
+```
+
+```{r}
+#DJI
+DJI <- DJI %>%
+          mutate(Date = as.Date(Date)) %>%
+          rename(date = Date)
+
+#calculate daily return
+tmp <- DJI %>%
+          tq_transmute(select  = Adj.Close, 
+                 mutate_fun = periodReturn, 
+                 period = "daily",
+                 col_rename = "Return")
+
+#Get cumulative return
+port_cumulative_ret <- tmp %>%
+  mutate(cr = cumprod(1 + Return))
+
+#Add column
+port_cumulative_ret <- port_cumulative_ret %>%
+                          mutate(type = "DJI")
+port_cumulative_ret
+#save data
+write.csv(port_cumulative_ret,"dji_return.csv",row.names = FALSE)
+```
+
+```{r}
+#test plot
+FPX <- read.csv("fpx_return.csv")%>%select(-2)
+IPO <- read.csv("ipo_return.csv")%>%select(-2)
+
+SP500 <- read.csv("sp500_return.csv")%>%select(-2)
+
+data <- rbind(FPX,IPO,SP500)
+
+data
+
+data <- data %>%
+        mutate(date = as.Date(date)) %>%
+        group_by(type) %>%
+        tq_transmute(select     = cr, 
+                 mutate_fun = to.period, 
+                 period     = "weeks")
+
+data
+
+ggplot(data = data,aes(x = date,y = cr,group=type, col=type))+
+  geom_line() +
+  ylab("Cumulative Returns")+
+  xlab("Date From July 1 to November 30")+
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.minor = element_blank())
+
+full_stock <- read.csv("full_stock_cleaned.csv")
+    stock <- full_stock %>%
+      select(c(2,3,9,10)) %>%
+      mutate(date = as.Date(date)) %>%
+      fill(adjusted)
+    stock
+```

@@ -1,0 +1,90 @@
+---
+title: "data_clean"
+author: "Zijie Huang"
+date: "2020/12/11"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load("tidyquant","tidyverse","httr")
+```
+
+```{r}
+#Get stock value in exchange
+#nyse <- tq_exchange("NYSE")
+#amex <- tq_exchange("AMEX")
+#nasdaq <- tq_exchange("NASDAQ")
+
+#load data
+load("full_exchange.RData")
+```
+
+```{r}
+#Combine exchange
+#full_exchange <- rbind(nyse,nasdaq,amex)
+
+#Delete replicates
+#full_exchange <- full_exchange %>% distinct()
+
+#full_exchange <- full_exchange %>%
+ # distinct(company, .keep_all = TRUE)
+
+#Save file
+#save(full_exchange,file = "full_exchange.RData")
+#write.csv(full_exchange,"full_exchange.csv")
+
+#Get price and combine all of them into one table
+full_stock <- try(tq_get(x = full_exchange$symbol[1], from = "2020-07-01", to = "2020-12-01", get = "stock.prices", curl.options = list(ssl_verifypeer = 0)))
+
+rows <- nrow(full_exchange)
+
+for(i in 2:rows){
+    print(i)
+    single_stock <- try(tq_get(x = full_exchange$symbol[i], from = "2020-07-01", to = "2020-12-01", get = "stock.prices", curl.options = list(ssl_verifypeer = 0)))
+  
+    full_stock <- rbind(full_stock, single_stock)
+}
+
+#Save file
+#save(full_stock,file = "full_stock.RData")
+```
+
+```{r}
+#Load data
+load("full_stock.RData")
+
+#Select only stock with value from 7.1 to 12.1
+symbol_index <- stockprice %>%
+                  count(symbol) %>%
+                  filter(n==106)
+
+full_stock <- stockprice %>%
+                  filter(symbol %in% symbol_index$symbol)
+
+#Join two table
+full_stock <- left_join(full_stock,full_exchange[,c(1,2,6)],by = "symbol")
+
+#Delete replicate company
+tmp <- full_exchange %>%
+  distinct(company, .keep_all = TRUE)
+
+
+full_stock <- full_stock %>%
+                  filter(symbol %in% tmp$symbol)
+
+#Save final cleaned data
+#save(full_stock,file = "full_stock_cleaned.RData")
+#write.csv(full_stock,"full_stock_cleaned.csv")
+```
+
+```{r}
+#Get SP500
+SP500 <- tq_get("^GSPC",get = "stock.prices",from = "2020-07-01", to = "2020-12-01",curl.options = list(ssl_verifypeer = 0))
+
+#Get DOW
+DJI <- tq_get("^DJI",get = "stock.prices",from = "2020-07-01", to = "2020-12-01",curl.options = list(ssl_verifypeer = 0))
+
+#Get NASDAQ
+NASDAQ <- tq_get("^IXIC",get = "stock.prices",from = "2020-07-01", to = "2020-12-01",curl.options = list(ssl_verifypeer = 0))
+```

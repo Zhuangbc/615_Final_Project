@@ -1,0 +1,102 @@
+---
+title: "EDA"
+author: "Zijie Huang"
+date: "2020/12/12"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load("tidyquant","tidyverse")
+```
+
+```{r}
+#Load cleaned data
+load("full_stock_cleaned.RData")
+y <- read.csv("full_exchange.csv")
+y[,-c(1,2,4)]
+z <- read.csv("full_stock_cleaned.csv")
+
+full_stock <- read.csv("full_stock_cleaned.csv")
+
+tmp <- full_stock %>% 
+      filter(company %in% "111, Inc.",
+             date == "2020-07-01")
+price <- tmp %>%
+          filter(company == "111, Inc.") %>%
+          select(9)
+full_stock
+```
+
+```{r}
+#Test for shiny
+ a <- full_stock %>%
+  group_by(symbol) %>%
+  count(sector)
+
+a %>% group_by(sector) %>%
+  count(sector)
+
+b <- which(str_detect(full_stock$company,"Zoom")=="TRUE")
+full_stock[b,]
+
+sp500 <- read.csv("SP500.csv")
+sp500
+```
+
+
+```{r}
+#Build ETF
+##FPX
+company_fpx <- c("Snap Inc.","Uber Technologies, Inc.",
+             "Thermo Fisher Scientific Inc","Marvell Technology Group Ltd.",
+             "Fidelity National Information Services, Inc.","Tesla, Inc.",
+             "Eli Lilly and Company","Zoom Video Communications, Inc.",
+             "Spotify Technology S.A.","PayPal Holdings, Inc."
+             )
+weight_fpx_10 <- c(0.0898,0.0609,0.0474,0.0441,0.0409,0.0336,0.0335,0.0289,0.0285,0.0258)
+weight_fpx <- weight_fpx_10/sum(weight_fpx_10)
+weight_fpx_percent <- paste(round(100*weight_fpx,2),"%",sep = "")
+fpx <- data.frame(company = company_fpx,weighting1 = weight_fpx, weighting = weight_fpx_percent)
+##save file
+#write.csv(fpx,"fpx_stock.csv")
+
+##IPO
+company_ipo <- c("Moderna, Inc.","Uber Technologies, Inc.",
+                 "Zoom Video Communications, Inc.","Pinterest, Inc.",
+                 "CrowdStrike Holdings, Inc.","Slack Technologies, Inc.",
+                 "Datadog, Inc.","Avantor, Inc.","StoneCo Ltd.","Lyft, Inc."
+                 )
+weight_ipo_10 <- c(0.1066,0.1018,0.0692,0.0690,0.0655,0.0387,0.0371,0.0328,0.0319,0.028)
+weight_ipo <- weight_ipo_10/sum(weight_ipo_10)
+weight_ipo_percent <- paste(round(100*weight_ipo,2),"%",sep = "")
+ipo <- data.frame(company = company_ipo,weighting1 = weight_ipo, weighting = weight_ipo_percent)
+##save file
+#write.csv(ipo,"ipo_stock.csv")
+
+##CSD
+company_csd <- c("Penn National Gaming, Inc.","Corteva, Inc.",
+                 "Dow Inc.","Lamb Weston Holdings, Inc.","Carrier Global Corporation",
+                 "Otis Worldwide Corporation","Wyndham Hotels & Resorts, Inc.",
+                 "frontdoor, inc.","IAA, Inc.","Park Hotels & Resorts Inc."
+                 )
+weight_csd_10 <- c(0.0814,0.0725,0.0715,0.071,0.0676,0.0664,0.0451,0.0449,0.0384,0.0378)
+weight_csd <- weight_csd_10/sum(weight_csd_10)
+weight_csd_percent <- paste(round(100*weight_csd,2),"%",sep = "")
+csd <- data.frame(company = company_csd,weighting1 = weight_csd, weighting = weight_csd_percent)
+##save file
+write.csv(csd,"csd_stock.csv")
+
+##SPAK
+company_spak <- c("DraftKings Inc.","Clarivate Plc","Vertiv Holdings, LLC",
+                  "Virgin Galactic Holdings, Inc.","Vivint Smart Home, Inc.",
+                  "Hyliion Holdings Corp.","Open Lending Corporation",
+                  "Repay Holdings Corporation","Immunovant, Inc.","Broadmark Realty Capital Inc."
+                  )
+weight_spak_10 <- c(0.1248,0.0929,0.0711,0.0692,0.0495,0.0445,0.042,0.0244,0.0232,0.0228)
+weight_spak <- weight_spak_10/sum(weight_spak_10)
+weight_spak_percent <- paste(round(100*weight_spak,2),"%",sep = "")
+spak <- data.frame(company = company_spak,weighting1 = weight_spak, weighting = weight_spak_percent)
+##save file
+write.csv(spak,"spak_stock.csv")
+```

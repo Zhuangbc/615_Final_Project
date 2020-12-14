@@ -1,0 +1,12 @@
+name: portfolio_track
+title: portfolio_track
+username:
+account: zhuangbc
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3398273
+bundleId: 3986310
+url: https://zhuangbc.shinyapps.io/portfolio_track/
+when: 1607941564.50046
+asMultiple: FALSE
+asStatic: FALSE
